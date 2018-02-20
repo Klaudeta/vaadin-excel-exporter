@@ -29,10 +29,9 @@ import org.vaadin.addons.excelexporter.configuration.ExportExcelSheetConfigurati
 import org.vaadin.addons.excelexporter.configuration.MergedCell;
 import org.vaadin.addons.excelexporter.model.ExportType;
 import org.vaadin.addons.excelexporter.utils.ExcelStyleUtil;
-import org.vaadin.addons.excelexporter.utils.NameGenerationUtil;
 import org.vaadin.addons.excelexporter.utils.FormatUtil;
+import org.vaadin.addons.excelexporter.utils.NameGenerationUtil;
 
-import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.components.grid.FooterRow;
 import com.vaadin.ui.components.grid.HeaderRow;
@@ -181,21 +180,15 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 	 *            the component configuration
 	 * @return the integer
 	 */
-	@SuppressWarnings("unchecked")
-	protected Integer addGridToExcelSheet(final Grid<BEANTYPE> grid, final XSSFWorkbook myWorkBook, Sheet sheet,
-			int rowNum, final ExportExcelSheetConfiguration<BEANTYPE> sheetConfiguration,
-			final ExportExcelComponentConfiguration<BEANTYPE> componentConfiguration) {
+  protected Integer addGridToExcelSheet(final Grid<BEANTYPE> grid, final XSSFWorkbook myWorkBook, Sheet sheet,
+      int rowNum, final ExportExcelSheetConfiguration<BEANTYPE> sheetConfiguration,
+      final ExportExcelComponentConfiguration<BEANTYPE> componentConfiguration) {
 
-		Collection<BEANTYPE> items;
-		if (grid.getDataProvider() instanceof ListDataProvider) {
-			items = ((ListDataProvider<BEANTYPE>) grid.getDataProvider()).getItems();
-		} else {
-			throw new UnsupportedOperationException("dataProvider " + grid.getDataProvider()
-				.getClass() + " of grid is not supported");
-		}
+    Collection<BEANTYPE> items = grid.getDataCommunicator().fetchItemsWithRange(0,
+        grid.getDataCommunicator().getDataProviderSize());
 
-		return addGridToExcelSheet(items, myWorkBook, sheet, rowNum, sheetConfiguration, componentConfiguration);
-	}
+    return addGridToExcelSheet(items, myWorkBook, sheet, rowNum, sheetConfiguration, componentConfiguration);
+  }
 
 	/**
 	 * Creates the generic content. Adds the component header, data, and footer
