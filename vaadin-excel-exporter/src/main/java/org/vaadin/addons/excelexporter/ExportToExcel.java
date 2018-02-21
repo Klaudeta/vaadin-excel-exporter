@@ -7,17 +7,21 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addons.excelexporter.configuration.AbstractComponentHeaderFooterConfiguration;
@@ -46,6 +50,8 @@ import com.vaadin.ui.components.grid.HeaderRow;
  */
 public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 
+  private static final int PAGE_SIZE = 100;
+  
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExportToExcel.class);
 
@@ -53,7 +59,7 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 	private static String EXCEL_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 	/** The workbook. */
-	protected XSSFWorkbook workbook;
+	protected SXSSFWorkbook workbook;
 
 	/** The export excel configuration. */
 	protected final ExportExcelConfiguration<BEANTYPE> exportExcelConfiguration;
@@ -85,7 +91,7 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 		super(EXCEL_MIME_TYPE);
 		this.exportType = exportType;
 		this.exportExcelConfiguration = exportExcelConfiguration;
-		this.workbook = new XSSFWorkbook();
+		this.workbook = new SXSSFWorkbook(PAGE_SIZE);
 
 		process(this.workbook, exportExcelConfiguration.getSheetConfigs());
 	}
@@ -103,9 +109,9 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 	 * @param sheetConfigs
 	 * 
 	 */
-	protected void process(XSSFWorkbook workbook, List<ExportExcelSheetConfiguration<BEANTYPE>> sheetConfigs) {
+	protected void process(SXSSFWorkbook workbook, List<ExportExcelSheetConfiguration<BEANTYPE>> sheetConfigs) {
 		for (ExportExcelSheetConfiguration<BEANTYPE> sheetConfig : sheetConfigs) {
-			Sheet sheet = workbook.createSheet(sheetConfig.getSheetname());
+		  SXSSFSheet sheet = workbook.createSheet(sheetConfig.getSheetname());
 			sheet.setAutobreaks(true);
 
 			int rowNum = 0;
@@ -115,7 +121,7 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 		}
 	}
 
-	private void addComponents(XSSFWorkbook workbook, ExportExcelSheetConfiguration<BEANTYPE> sheetConfig, Sheet sheet,
+	private void addComponents(SXSSFWorkbook workbook, ExportExcelSheetConfiguration<BEANTYPE> sheetConfig, SXSSFSheet sheet,
 			int rowNum) {
 		int tmpRowNum = rowNum;
 		for (ExportExcelComponentConfiguration<BEANTYPE> componentConfig : sheetConfig.getComponentConfigs()) {
@@ -126,7 +132,7 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 		}
 	}
 
-	private int addSheetGeneratedBy(XSSFWorkbook workbook, ExportExcelSheetConfiguration<BEANTYPE> sheetConfig,
+	private int addSheetGeneratedBy(SXSSFWorkbook workbook, ExportExcelSheetConfiguration<BEANTYPE> sheetConfig,
 			Sheet sheet, int rowNum) {
 		int tmpRowNum = rowNum;
 		if (sheetConfig.getIsDefaultGeneratedByRequired()) {
@@ -142,7 +148,7 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 		return tmpRowNum;
 	}
 
-	private int addSheetTitle(XSSFWorkbook workbook, ExportExcelSheetConfiguration<BEANTYPE> sheetConfig, Sheet sheet,
+	private int addSheetTitle(SXSSFWorkbook workbook, ExportExcelSheetConfiguration<BEANTYPE> sheetConfig, Sheet sheet,
 			int rowNum) {
 		int tmpRowNum = rowNum;
 		if (sheetConfig.getIsDefaultSheetTitleRequired()) {
@@ -180,13 +186,12 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 	 *            the component configuration
 	 * @return the integer
 	 */
-  protected Integer addGridToExcelSheet(final Grid<BEANTYPE> grid, final XSSFWorkbook myWorkBook, Sheet sheet,
+  protected Integer addGridToExcelSheet(final Grid<BEANTYPE> grid, final SXSSFWorkbook myWorkBook, SXSSFSheet sheet,
       int rowNum, final ExportExcelSheetConfiguration<BEANTYPE> sheetConfiguration,
       final ExportExcelComponentConfiguration<BEANTYPE> componentConfiguration) {
 
-    Collection<BEANTYPE> items = grid.getDataCommunicator().fetchItemsWithRange(0,
-        grid.getDataCommunicator().getDataProviderSize());
-
+    final Function<Page, Stream<BEANTYPE>> fetchItems = page -> grid.getDataCommunicator().fetchItemsWithRange(page.offset, page.limit).stream();
+    Iterator<BEANTYPE> items =  generatePageStream(PAGE_SIZE, grid.getDataCommunicator().getDataProviderSize()).flatMap(fetchItems).iterator();
     return addGridToExcelSheet(items, myWorkBook, sheet, rowNum, sheetConfiguration, componentConfiguration);
   }
 
@@ -208,7 +213,7 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 	 *            the component configuration
 	 * @return the integer
 	 */
-	protected int addGridToExcelSheet(final Collection<BEANTYPE> itemIds, final XSSFWorkbook myWorkBook, Sheet sheet,
+	protected int addGridToExcelSheet(final Iterator<BEANTYPE> itemIds, final SXSSFWorkbook myWorkBook, SXSSFSheet sheet,
 			int rowNum, final ExportExcelSheetConfiguration<BEANTYPE> sheetConfiguration,
 			final ExportExcelComponentConfiguration<BEANTYPE> componentConfiguration) {
 
@@ -217,7 +222,11 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 		tmpRowNum++;
 
 		sheet.setRowBreak(tmpRowNum);
-
+		
+		//Added for autosizing below
+		//XXX Fixme causes Nullpointerexception if cell contents are null
+		//sheet.trackAllColumnsForAutoSizing();
+		
 		sheet.createFreezePane(sheetConfiguration.getFrozenColumns(), sheetConfiguration.getFrozenRows());
 
 		tmpRowNum = addGridHeaderRows(sheet, tmpRowNum, componentConfiguration);
@@ -225,20 +234,21 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 		tmpRowNum = addGridFooterRows(sheet, tmpRowNum, componentConfiguration);
 
 		// Disabling auto columns for each column
-		for (int columns = 0; columns < componentConfiguration.getVisibleProperties().length; columns++) {
-			sheet.autoSizeColumn(columns, false);
-		}
+		// FIXME Needs trackAllColumnsForAutoSizing
+//		for (int columns = 0; columns < componentConfiguration.getVisibleProperties().length; columns++) {
+	//	  sheet.autoSizeColumn(columns, false);
+		//}
 
 		return tmpRowNum;
 	}
 
-	private int addGridContent(final Collection<BEANTYPE> itemIds, final XSSFWorkbook myWorkBook, Sheet sheet,
+	private int addGridContent(final Iterator<BEANTYPE> itemIds, final SXSSFWorkbook myWorkBook, Sheet sheet,
 			int rowNum, final ExportExcelSheetConfiguration<BEANTYPE> sheetConfiguration,
 			final ExportExcelComponentConfiguration<BEANTYPE> componentConfiguration) {
 		int tmpRowNum = rowNum;
 		int dataRowContentStart = rowNum;
-		for (final BEANTYPE itemId : itemIds) {
-			addGridDataRow(	myWorkBook, sheet, sheetConfiguration, componentConfiguration, itemId, tmpRowNum,
+		while(itemIds.hasNext()) {
+			addGridDataRow(	myWorkBook, sheet, sheetConfiguration, componentConfiguration, itemIds.next(), tmpRowNum,
 							dataRowContentStart);
 			tmpRowNum++;
 		}
@@ -329,7 +339,8 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 				sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, tmpStartMerge, endMerge));
 			}
 		}
-		sheet.autoSizeColumn(columns, false);
+		// XXX java.lang.IllegalStateException: Could not auto-size column. Make sure the column was tracked prior to auto-sizing the column.
+		//sheet.autoSizeColumn(columns, false);
 		return tmpStartMerge;
 	}
 
@@ -377,7 +388,7 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 	 *            the local row
 	 * @param dataRowContentStart
 	 */
-	protected void addGridDataRow(final XSSFWorkbook myWorkBook, Sheet sheet,
+	protected void addGridDataRow(final SXSSFWorkbook myWorkBook, Sheet sheet,
 			final ExportExcelSheetConfiguration<BEANTYPE> sheetConfiguration,
 			final ExportExcelComponentConfiguration<BEANTYPE> componentConfiguration, final BEANTYPE itemId,
 			final Integer rowNum, int dataRowContentStart) {
@@ -527,4 +538,70 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 							this.exportExcelConfiguration.getMaxFilenameCalendarExtension(), this.exportType));
 	}
 
+  final static Stream<Page> generatePageStream(int pageSize, int totalNumberOfElements) {
+    final int pages = (totalNumberOfElements / pageSize) + ((totalNumberOfElements % pageSize) > 0 ? 1 : 0);
+    return IntStream.iterate(0, currentOffset -> currentOffset + pageSize).limit(pages)
+        .mapToObj(currentOffset -> new Page(currentOffset, Math.min(pageSize, totalNumberOfElements - currentOffset)));
+  }
+}
+
+class Page {
+  final int offset;
+  final int limit;
+  Page(int offset, int limit) {
+    this.offset = offset;
+    this.limit = limit;
+  }
+
+}
+
+class PageProvider implements Iterator<Page> {
+  
+  private final int pageSize;
+  private final int totalNumberOfElements;
+  private int currentOffset;
+  
+  public PageProvider(int pageSize, int totalNumberOfElements) {
+    this.pageSize = pageSize;
+    this.totalNumberOfElements = totalNumberOfElements;
+  }
+  @Override
+  public boolean hasNext() {
+    return currentOffset < totalNumberOfElements;
+  }
+
+  @Override
+  public Page next() {
+    final int end = Math.min(pageSize, totalNumberOfElements - currentOffset);
+    final Page result = new Page(currentOffset, end);
+    currentOffset += pageSize;
+    return result;
+  }
+  
+}
+
+class PagedIterator<E> implements Iterator<E> {
+
+  private final Iterator<Page> pageProvider;
+  private final Function<Page,Iterator<E>> pageConsumer;
+  private Iterator<E> current = Collections.emptyListIterator();
+  
+  public PagedIterator(Iterator<Page> pageProvider, Function<Page, Iterator<E>> pageConsumer) {
+    this.pageProvider = pageProvider;
+    this.pageConsumer = pageConsumer;
+  }
+
+  @Override
+  public boolean hasNext() {
+    return current.hasNext() || pageProvider.hasNext();
+  }
+
+  @Override
+  public E next() {
+    if(!current.hasNext()) {
+      current = pageConsumer.apply(pageProvider.next());
+    }
+    return current.next();
+  }
+  
 }

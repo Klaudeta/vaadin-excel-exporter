@@ -1,7 +1,7 @@
 package org.vaadin.addons.excelexporter.function;
 
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Workbook;
 
 /**
  * This function helps you to create the cellstyle you want for a specific cell
@@ -23,5 +23,5 @@ public interface DataCellStyleGeneratorFunction {
 	 *            the rowNum
 	 * @return the function result
 	 */
-	XSSFCellStyle apply(XSSFWorkbook workbook, String columnId, Object value, int rowNum);
+	CellStyle apply(Workbook workbook, String columnId, Object value, int rowNum);
 }

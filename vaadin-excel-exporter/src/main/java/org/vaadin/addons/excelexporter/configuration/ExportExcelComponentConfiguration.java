@@ -9,11 +9,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+
 import net.karneim.pojobuilder.GeneratePojoBuilder;
 
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
@@ -56,52 +59,52 @@ public class ExportExcelComponentConfiguration<BEANTYPE> {
 	private List<ComponentFooterConfiguration> footerConfigs;
 
 	/** The table header style function. */
-	private BiFunction<XSSFWorkbook, String, XSSFCellStyle> headerStyleFunction = (workbook, columnId) -> {
-		XSSFCellStyle headerCellStyle = workbook.createCellStyle();
-		headerCellStyle.setFillForegroundColor(new XSSFColor(new Color(50, 86, 110)));
-		headerCellStyle.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);
-		headerCellStyle.setAlignment(CellStyle.ALIGN_LEFT);
-		headerCellStyle = ExcelStyleUtil.setBorders(headerCellStyle, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE,
-													Boolean.TRUE, Color.WHITE);
+  private BiFunction<Workbook, String, CellStyle> headerStyleFunction = (workbook, columnId) -> {
+    CellStyle headerCellStyle = workbook.createCellStyle();
 
-		XSSFFont boldFont = workbook.createFont();
-		boldFont.setColor(IndexedColors.WHITE.getIndex());
-		boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+    headerCellStyle.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);
+    headerCellStyle.setAlignment(CellStyle.ALIGN_LEFT);
 
-		headerCellStyle.setFont(boldFont);
+    if (headerCellStyle instanceof XSSFCellStyle) {
+      ((XSSFCellStyle) headerCellStyle).setFillForegroundColor(new XSSFColor(new Color(50, 86, 110)));
+      headerCellStyle = ExcelStyleUtil.setBorders((XSSFCellStyle) headerCellStyle, Boolean.TRUE, Boolean.TRUE,
+          Boolean.TRUE, Boolean.TRUE, Color.WHITE);
+    }
+    // XSSFFont boldFont = workbook.createFont();
+    Font boldFont = workbook.createFont();
+    boldFont.setColor(IndexedColors.WHITE.getIndex());
+    boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
 
-		return headerCellStyle;
-	};
+    headerCellStyle.setFont(boldFont);
+
+    return headerCellStyle;
+  };
 
 	/** The table footer style function. */
-	private BiFunction<XSSFWorkbook, String, XSSFCellStyle> footerStyleFunction = (workbook, columnId) -> {
-		XSSFCellStyle headerCellStyle = workbook.createCellStyle();
-		headerCellStyle.setFillForegroundColor(new XSSFColor(new Color(50, 86, 110)));
+	private BiFunction<Workbook, String, CellStyle> footerStyleFunction = (workbook, columnId) -> {
+		CellStyle headerCellStyle = workbook.createCellStyle();
+
 		headerCellStyle.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);
 		headerCellStyle.setAlignment(CellStyle.ALIGN_LEFT);
-		headerCellStyle = ExcelStyleUtil.setBorders(headerCellStyle, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE,
-													Boolean.TRUE, Color.WHITE);
 
-		XSSFFont boldFont = workbook.createFont();
+		if(headerCellStyle instanceof XSSFCellStyle) {
+		  
+	    ((XSSFCellStyle) headerCellStyle).setFillForegroundColor(new XSSFColor(new Color(50, 86, 110)));
+	    headerCellStyle = ExcelStyleUtil.setBorders(((XSSFCellStyle) headerCellStyle), Boolean.TRUE, Boolean.TRUE, Boolean.TRUE,
+          Boolean.TRUE, Color.WHITE);
+		}
+		
+		Font boldFont = workbook.createFont();
 		boldFont.setColor(IndexedColors.WHITE.getIndex());
 		boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
-
+		
 		headerCellStyle.setFont(boldFont);
 
 		return headerCellStyle;
 	};
 
-	/** The table content style function. */
-	private DataCellStyleGeneratorFunction contentStyleFunction = (workbook, columnId, value, rowNum) -> {
-		XSSFCellStyle cellStyle = workbook.createCellStyle();
-
-		if (rowNum % 2 == 1) {
-			cellStyle.setFillForegroundColor(new XSSFColor(new Color(228, 234, 238)));
-			cellStyle.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);
-		}
-
-		return cellStyle;
-	};
+  /** The table content style function. */
+  private DataCellStyleGeneratorFunction contentStyleFunction = new DefaultContentStyleFunction();
 
 	/** The column formatters. */
 	private Map<Object, ColumnFormatter> columnFormatters = new LinkedHashMap<>();
@@ -128,19 +131,19 @@ public class ExportExcelComponentConfiguration<BEANTYPE> {
 		this.grid = grid;
 	}
 
-	public BiFunction<XSSFWorkbook, String, XSSFCellStyle> getHeaderStyleFunction() {
+	public BiFunction<Workbook, String, CellStyle> getHeaderStyleFunction() {
 		return this.headerStyleFunction;
 	}
 
-	public void setHeaderStyleFunction(BiFunction<XSSFWorkbook, String, XSSFCellStyle> headerStyleFunction) {
+	public void setHeaderStyleFunction(BiFunction<Workbook, String, CellStyle> headerStyleFunction) {
 		this.headerStyleFunction = headerStyleFunction;
 	}
 
-	public BiFunction<XSSFWorkbook, String, XSSFCellStyle> getFooterStyleFunction() {
+	public BiFunction<Workbook, String, CellStyle> getFooterStyleFunction() {
 		return this.footerStyleFunction;
 	}
 
-	public void setFooterStyleFunction(BiFunction<XSSFWorkbook, String, XSSFCellStyle> footerStyleFunction) {
+	public void setFooterStyleFunction(BiFunction<Workbook, String, CellStyle> footerStyleFunction) {
 		this.footerStyleFunction = footerStyleFunction;
 	}
 
@@ -330,4 +333,27 @@ public class ExportExcelComponentConfiguration<BEANTYPE> {
 		}
 		return null;
 	}
+}
+
+class DefaultContentStyleFunction implements DataCellStyleGeneratorFunction {
+
+  private final CacheableValue<CellStyle> dataStyle1 = new CacheableValue<>();
+  private final CacheableValue<CellStyle> dataStyle2 = new CacheableValue<>();
+
+  @Override
+  public CellStyle apply(Workbook workbook, String columnId, Object value, int rowNum) {
+    if (rowNum % 2 == 0) {
+      return dataStyle1.computeIfAbsent(workbook::createCellStyle);
+    } else {
+      return dataStyle2.computeIfAbsent(() -> {
+        CellStyle style = workbook.createCellStyle();
+        // XXX Only supported on XSSFCellStyle
+        // dataStyle2.setFillForegroundColor(new XSSFColor(new Color(228, 234,
+        // 238)));
+        // TODO
+        style.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);
+        return style;
+      });
+    }
+  }
 }

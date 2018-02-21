@@ -23,6 +23,7 @@ import org.vaadin.addons.excelexporter.model.ExportType;
 import com.vaadin.annotations.Title;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.annotations.Widgetset;
+import com.vaadin.data.provider.CallbackDataProvider;
 import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.VaadinRequest;
@@ -76,8 +77,11 @@ public class DemoUI extends UI {
     /*********
      * Adding Components to the Layout namely Tables, Grids and Tree Table
      *******/
+    //Invalid row number (1048576) outside allowable range (0..1048575)
+    final CallbackDataProvider<DataModel, String> dataProvider = new CallbackDataProvider<>(
+        q -> DataModelGenerator.generate(q.getLimit()).stream(), q -> 1000 * 1000);
     this.gridDefault = new Grid<>(DataModel.class);
-    this.gridDefault.setDataProvider(new ListDataProvider<>(DataModelGenerator.generate(20)));
+    this.gridDefault.setDataProvider(dataProvider);
     this.gridDefault.setSizeFull();
     this.gridDefault.setColumns(this.visibleColumns);
 
