@@ -79,45 +79,45 @@ public class DemoUI extends UI {
      *******/
     //Invalid row number (1048576) outside allowable range (0..1048575)
     final CallbackDataProvider<DataModel, String> dataProvider = new CallbackDataProvider<>(
-        q -> DataModelGenerator.generate(q.getLimit()).stream(), q -> 1000 * 1000);
-    this.gridDefault = new Grid<>(DataModel.class);
-    this.gridDefault.setDataProvider(dataProvider);
-    this.gridDefault.setSizeFull();
-    this.gridDefault.setColumns(this.visibleColumns);
+				q -> DataModelGenerator.generate(q.getLimit()).stream(), q -> 10 * 100);
+    gridDefault = new Grid<>(DataModel.class);
+    gridDefault.setDataProvider(dataProvider);
+    gridDefault.setSizeFull();
+    gridDefault.setColumns(visibleColumns);
 
-    this.gridMergedCells = new Grid<>(DataModel.class);
-    this.gridMergedCells.setDataProvider(new ListDataProvider<>(DataModelGenerator.generate(20)));
-    this.gridMergedCells.setColumns(this.visibleColumns);
-    this.gridMergedCells.setSizeFull();
-    HeaderRow headerRow = this.gridMergedCells.addHeaderRowAt(0);
+    gridMergedCells = new Grid<>(DataModel.class);
+    gridMergedCells.setDataProvider(new ListDataProvider<>(DataModelGenerator.generate(20)));
+    gridMergedCells.setColumns(visibleColumns);
+    gridMergedCells.setSizeFull();
+    HeaderRow headerRow = gridMergedCells.addHeaderRowAt(0);
     HeaderCell joinHeaderColumns1 = headerRow.join("country", "productType");
     joinHeaderColumns1.setText("mergedCell");
     HeaderCell joinHeaderColumns2 = headerRow.join("cheapest", "contractor");
     joinHeaderColumns2.setText("mergedCell");
-    FooterRow footerRow1 = this.gridMergedCells.addFooterRowAt(0);
+    FooterRow footerRow1 = gridMergedCells.addFooterRowAt(0);
     FooterCell joinFooterColumns1 = footerRow1.join("country", "productType");
     joinFooterColumns1.setText("mergedCell");
     FooterCell joinFooterColumns2 = footerRow1.join("cheapest", "contractor");
     joinFooterColumns2.setText("mergedCell");
-    FooterRow footerRow2 = this.gridMergedCells.addFooterRowAt(0);
-    for (int i = 0; i < this.visibleColumns.length; i++) {
-      footerRow2.getCell(this.visibleColumns[i]).setText(this.columnHeaders[i]);
+    FooterRow footerRow2 = gridMergedCells.addFooterRowAt(0);
+    for (int i = 0; i < visibleColumns.length; i++) {
+      footerRow2.getCell(visibleColumns[i]).setText(columnHeaders[i]);
     }
 
-    this.gridFrozenColumns = new Grid<>(DataModel.class);
-    this.gridFrozenColumns.setDataProvider(new ListDataProvider<>(DataModelGenerator.generate(20)));
-    this.gridFrozenColumns.setColumns(this.visibleColumns);
-    this.gridFrozenColumns.getColumn("country").setWidth(300);
-    this.gridFrozenColumns.getColumn("productType").setWidth(300);
-    this.gridFrozenColumns.getColumn("catalogue").setWidth(300);
-    this.gridFrozenColumns.setSizeFull();
-    this.gridFrozenColumns.setFrozenColumnCount(3);
+    gridFrozenColumns = new Grid<>(DataModel.class);
+    gridFrozenColumns.setDataProvider(new ListDataProvider<>(DataModelGenerator.generate(20)));
+    gridFrozenColumns.setColumns(visibleColumns);
+    gridFrozenColumns.getColumn("country").setWidth(300);
+    gridFrozenColumns.getColumn("productType").setWidth(300);
+    gridFrozenColumns.getColumn("catalogue").setWidth(300);
+    gridFrozenColumns.setSizeFull();
+    gridFrozenColumns.setFrozenColumnCount(3);
 
     TabSheet tabSheet = new TabSheet();
     tabSheet.setSizeFull();
-    tabSheet.addTab(this.gridDefault, "Grid (Default)");
-    tabSheet.addTab(this.gridMergedCells, "Grid (Merged Cells)");
-    tabSheet.addTab(this.gridFrozenColumns, "Grid (Frozen Columns&Rows)");
+    tabSheet.addTab(gridDefault, "Grid (Default)");
+    tabSheet.addTab(gridMergedCells, "Grid (Merged Cells)");
+    tabSheet.addTab(gridFrozenColumns, "Grid (Frozen Columns&Rows)");
     layout.addComponent(tabSheet);
     layout.setExpandRatio(tabSheet, 1);
 
@@ -179,17 +179,17 @@ public class DemoUI extends UI {
         final Object columnId) -> (value != null) ? ((String) value).toLowerCase() : null);
 
     ExportExcelComponentConfiguration<DataModel> componentConfig1 = new ExportExcelComponentConfigurationBuilder<DataModel>()
-        .withGrid(this.gridDefault).withVisibleProperties(this.visibleColumns)
+        .withGrid(gridDefault).withVisibleProperties(visibleColumns)
         .withHeaderConfigs(Arrays.asList(
-            new ComponentHeaderConfigurationBuilder().withAutoFilter(true).withColumnKeys(this.columnHeaders).build()))
+            new ComponentHeaderConfigurationBuilder().withAutoFilter(true).withColumnKeys(columnHeaders).build()))
         .withIntegerFormattingProperties(Arrays.asList("counter"))
         .withFloatFormattingProperties(Arrays.asList("totalCosts", "differenceToMin"))
         .withBooleanFormattingProperties(Arrays.asList("active")).withColumnFormatters(columnFormatters).build();
 
     ExportExcelComponentConfiguration<DataModel> componentConfig2 = new ExportExcelComponentConfigurationBuilder<DataModel>()
         .withGrid(
-            this.gridMergedCells)
-        .withVisibleProperties(this.visibleColumns)
+            gridMergedCells)
+        .withVisibleProperties(visibleColumns)
         .withHeaderConfigs(
             Arrays
                 .asList(
@@ -198,17 +198,17 @@ public class DemoUI extends UI {
                             .withHeaderKey("mergedCell").build(),
                         new MergedCellBuilder().withStartProperty("cheapest").withEndProperty("contractor")
                             .withHeaderKey("mergedCell").build()))
-                        .withColumnKeys(this.columnHeaders).build(),
-                    new ComponentHeaderConfigurationBuilder().withAutoFilter(true).withColumnKeys(this.columnHeaders)
+                        .withColumnKeys(columnHeaders).build(),
+                    new ComponentHeaderConfigurationBuilder().withAutoFilter(true).withColumnKeys(columnHeaders)
                         .build()))
         .withFooterConfigs(
-            Arrays.asList(new ComponentFooterConfigurationBuilder().withColumnKeys(this.columnHeaders).build(),
+            Arrays.asList(new ComponentFooterConfigurationBuilder().withColumnKeys(columnHeaders).build(),
                 new ComponentFooterConfigurationBuilder().withMergedCells(Arrays.asList(
                     new MergedCellBuilder().withStartProperty("country").withEndProperty("productType")
                         .withHeaderKey("mergedCell").build(),
                     new MergedCellBuilder().withStartProperty("cheapest").withEndProperty("contractor")
                         .withHeaderKey("mergedCell").build()))
-                    .withColumnKeys(this.columnHeaders).build()))
+                    .withColumnKeys(columnHeaders).build()))
         .withIntegerFormattingProperties(Arrays.asList("counter"))
         .withFloatFormattingProperties(Arrays.asList("totalCosts", "differenceToMin"))
         .withBooleanFormattingProperties(Arrays.asList("active")).withColumnFormatters(columnFormatters).build();
@@ -285,7 +285,7 @@ public class DemoUI extends UI {
   };
 
   class ExportExcelComponentConfigurationBuilder<T> {
-    private ExportExcelComponentConfiguration<T> bean = new ExportExcelComponentConfiguration<T>();
+    private ExportExcelComponentConfiguration<T> bean = new ExportExcelComponentConfiguration<>();
 
     ExportExcelComponentConfigurationBuilder<T> withGrid(Grid<T> grid) {
       bean.setGrid(grid);
@@ -338,7 +338,7 @@ public class DemoUI extends UI {
   };
 
   class ExportExcelConfigurationBuilder<T> {
-    private ExportExcelConfiguration<T> bean = new ExportExcelConfiguration<T>();
+    private ExportExcelConfiguration<T> bean = new ExportExcelConfiguration<>();
 
     ExportExcelConfigurationBuilder<T> withGeneratedBy(String generatedBy) {
       bean.setGeneratedBy(generatedBy);
@@ -358,7 +358,7 @@ public class DemoUI extends UI {
 
   class ExportExcelSheetConfigurationBuilder<T> {
 
-    private ExportExcelSheetConfiguration<T> bean = new ExportExcelSheetConfiguration<T>();
+    private ExportExcelSheetConfiguration<T> bean = new ExportExcelSheetConfiguration<>();
 
     ExportExcelSheetConfigurationBuilder<T> withReportTitle(String reportTitle) {
       bean.setReportTitle(reportTitle);
