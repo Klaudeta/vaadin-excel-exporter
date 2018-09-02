@@ -10,22 +10,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-import net.karneim.pojobuilder.GeneratePojoBuilder;
-
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
-import org.apache.poi.xssf.usermodel.XSSFFont;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.vaadin.addons.excelexporter.formatter.ColumnFormatter;
 import org.vaadin.addons.excelexporter.function.DataCellStyleGeneratorFunction;
 import org.vaadin.addons.excelexporter.utils.ExcelStyleUtil;
 
 import com.vaadin.ui.Grid;
+
+import net.karneim.pojobuilder.GeneratePojoBuilder;
 
 /**
  * The Class ExportExcelComponentConfiguration is used to configure the
@@ -347,10 +344,11 @@ class DefaultContentStyleFunction implements DataCellStyleGeneratorFunction {
     } else {
       return dataStyle2.computeIfAbsent(() -> {
         CellStyle style = workbook.createCellStyle();
-        // XXX Only supported on XSSFCellStyle
-        // dataStyle2.setFillForegroundColor(new XSSFColor(new Color(228, 234,
-        // 238)));
-        // TODO
+				if (style instanceof XSSFCellStyle) {
+					((XSSFCellStyle) style).setFillForegroundColor(new XSSFColor(new Color(228, 234, 238)));
+					style = ExcelStyleUtil.setBorders((XSSFCellStyle) style, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE,
+							Boolean.TRUE, Color.LIGHT_GRAY);
+				}
         style.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);
         return style;
       });
