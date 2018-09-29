@@ -10,16 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import net.karneim.pojobuilder.GeneratePojoBuilder;
-
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFFont;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.vaadin.addons.excelexporter.utils.FormatUtil;
 import org.vaadin.addons.excelexporter.utils.NameGenerationUtil;
+
+import net.karneim.pojobuilder.GeneratePojoBuilder;
 
 /**
  * The Class ExportExcelSheetConfiguration is used to configure each sheet.
@@ -92,6 +90,8 @@ public class ExportExcelSheetConfiguration<BEANTYPE> {
 
 	private int frozenRows = 0;
 	
+	private byte[] imageBytes = new byte[] {};
+
   /** The report title style function. */
   private Function<Workbook, CellStyle> reportTitleStyleFunction = new DefaultReportTitleStyleFunction();
 
@@ -583,6 +583,14 @@ public class ExportExcelSheetConfiguration<BEANTYPE> {
 
 	public void setFrozenRows(int frozenRows) {
 		this.frozenRows = frozenRows;
+	}
+
+	public byte[] getImageBytes() {
+		return imageBytes;
+	}
+
+	public void setImageBytes(byte[] imageBytes) {
+		this.imageBytes = imageBytes;
 	}
 }
 

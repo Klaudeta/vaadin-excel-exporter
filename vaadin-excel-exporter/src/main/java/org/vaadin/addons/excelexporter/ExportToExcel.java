@@ -16,8 +16,13 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
+import org.apache.poi.ss.usermodel.Picture;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
@@ -116,10 +121,13 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 
 			int rowNum = 0;
 			rowNum = addSheetTitle(workbook, sheetConfig, sheet, rowNum);
+
 			rowNum = addSheetGeneratedBy(workbook, sheetConfig, sheet, rowNum);
+			rowNum = addSheetImage(workbook, sheetConfig, sheet, rowNum);
 			addComponents(workbook, sheetConfig, sheet, rowNum);
 		}
 	}
+
 
 	private void addComponents(SXSSFWorkbook workbook, ExportExcelSheetConfiguration<BEANTYPE> sheetConfig, SXSSFSheet sheet,
 			int rowNum) {
@@ -161,6 +169,31 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 				.apply(workbook));
 			sheet.addMergedRegion(new CellRangeAddress(tmpRowNum, tmpRowNum, sheetConfig.getColumnForTitleRegion()[0],
 					sheetConfig.getColumnForTitleRegion()[1]));
+		}
+		return tmpRowNum;
+	}
+
+	private int addSheetImage(SXSSFWorkbook workbook2, ExportExcelSheetConfiguration<BEANTYPE> sheetConfig,
+			SXSSFSheet sheet, int rowNum) {
+		int tmpRowNum = rowNum;
+		if (sheetConfig.getImageBytes().length > 0) {
+			// Creating Report Name Row
+
+
+			byte[] bytes = sheetConfig.getImageBytes();
+			int pictureIndex = workbook2.addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
+			sheet.createRow(tmpRowNum++);
+
+			CreationHelper helper = workbook2.getCreationHelper();
+			Drawing drawingPatriarch = sheet.createDrawingPatriarch();
+			ClientAnchor anchor = helper.createClientAnchor();
+			anchor.setCol1(0);
+			anchor.setRow1(tmpRowNum);
+			anchor.setCol2(999);
+			anchor.setRow2(tmpRowNum);
+
+			Picture pict = drawingPatriarch.createPicture(anchor, pictureIndex);
+			pict.resize();
 		}
 		return tmpRowNum;
 	}
