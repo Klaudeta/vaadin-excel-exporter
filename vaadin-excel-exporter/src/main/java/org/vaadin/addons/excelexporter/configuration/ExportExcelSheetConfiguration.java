@@ -187,7 +187,7 @@ public class ExportExcelSheetConfiguration<BEANTYPE> {
 	 */
 	public String getReportTitleRowContent() {
 		if (this.reportTitleRowContent == null || this.reportTitleRowContent.isEmpty()) {
-			return "Reportname: " + getReportTitle();
+			return getReportTitle();
 		}
 
 		return this.reportTitleRowContent;

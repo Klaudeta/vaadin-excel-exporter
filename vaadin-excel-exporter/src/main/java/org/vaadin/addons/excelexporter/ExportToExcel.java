@@ -162,7 +162,13 @@ public class ExportToExcel<BEANTYPE> extends AbstractExportTo {
 		if (sheetConfig.getIsDefaultSheetTitleRequired()) {
 			// Creating Report Name Row
 			Row myHeaderRow1 = sheet.createRow(tmpRowNum++);
-			Cell myHeaderCell1 = myHeaderRow1.createCell(0);
+
+			Cell myHeaderCell1 = myHeaderRow1.createCell(sheetConfig.getColumnForTitleRegion()[0]);
+
+			for (int i = sheetConfig.getColumnForTitleRegion()[0] + 1; i <= sheetConfig
+					.getColumnForTitleRegion()[1]; i++) {
+				myHeaderRow1.createCell(i);
+			}
 
 			myHeaderCell1.setCellValue(sheetConfig.getReportTitleRowContent());
 			myHeaderCell1.setCellStyle(sheetConfig.getReportTitleStyleFunction()
